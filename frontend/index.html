@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpamShield AI — Intelligent Spam Detection</title>
+    <meta name="description" content="Detect spam messages instantly with AI-powered analysis. Advanced NLP and machine learning for accurate spam classification with confidence scores.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- ====== Three.js Particle Background ====== -->
+    <div id="particles-container" aria-hidden="true"></div>
+
+    <!-- ====== Toast Notification Container ====== -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- ====== Navigation ====== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#hero" class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span class="logo-text">Spam<span class="logo-highlight">Detector</span></span>
+            </a>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#hero" class="nav-link active">Home</a></li>
+                <li><a href="#detect" class="nav-link">Detect</a></li>
+                <li><a href="#history" class="nav-link">History</a></li>
+                <li><a href="#stats" class="nav-link">Stats</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle dark/light mode">
+                    <span class="theme-icon-dark">🌙</span>
+                    <span class="theme-icon-light">☀️</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ====== Hero Section ====== -->
+    <section class="hero" id="hero">
+        <div class="hero-content reveal">
+            <!-- <div class="hero-badge">
+                <span class="badge-dot"></span>
+                AI-Powered Protection
+            </div> -->
+            <h1 class="hero-title">
+                Detect <span class="gradient-text" id="typing-text"></span>
+                <span class="typing-cursor">|</span>
+            </h1>
+            <p class="hero-subtitle">
+                Advanced machine learning algorithms analyze messages in real-time to
+                identify spam, phishing attempts, and fraudulent content with up to
+                <strong>98% accuracy</strong>.
+            </p>
+            <div class="hero-cta">
+                <a href="#detect" class="btn btn-primary btn-lg">
+                    <span>Start Detecting</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+                <a href="#stats" class="btn btn-outline btn-lg">View Statistics</a>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span class="hero-stat-number">98%</span>
+                    <span class="hero-stat-label">Accuracy</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-number">3</span>
+                    <span class="hero-stat-label">ML Models</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-number">&lt;1s</span>
+                    <span class="hero-stat-label">Response</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== Detection Section ====== -->
+    <section class="section" id="detect">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Detection Engine</span>
+                <h2 class="section-title">Analyze Your Message</h2>
+                <p class="section-desc">Paste any email or SMS below and let our AI determine if it's spam.</p>
+            </div>
+
+            <div class="detect-grid">
+                <!-- Input Panel -->
+                <div class="glass-card detect-input-card reveal">
+                    <div class="card-header">
+                        <h3 class="card-title">📝 Message Input</h3>
+                        <span class="char-count" id="char-count">0 / 10,000</span>
+                    </div>
+
+                    <textarea
+                        id="message-input"
+                        class="message-textarea"
+                        placeholder="Paste your email or message here to check for spam..."
+                        maxlength="10000"
+                        rows="8"
+                    ></textarea>
+
+                    <!-- Sample Messages -->
+                    <div class="sample-buttons">
+                        <span class="sample-label">Try a sample:</span>
+                        <button class="btn btn-sample btn-spam-sample" data-type="spam" id="btn-sample-spam">🚫 Spam</button>
+                        <button class="btn btn-sample btn-ham-sample" data-type="ham" id="btn-sample-ham">✅ Legit</button>
+                    </div>
+
+                    <button class="btn btn-primary btn-detect" id="btn-detect">
+                        <span class="btn-text">🔍 Detect Spam</span>
+                        <span class="btn-loading" style="display:none;">
+                            <span class="spinner"></span>
+                            Analyzing...
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Result Panel -->
+                <div class="glass-card detect-result-card" id="result-card" hidden>
+                    <div class="card-header">
+                        <h3 class="card-title">📊 Analysis Result</h3>
+                        <button class="btn btn-icon" id="btn-copy-result" title="Copy result">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Verdict -->
+                    <div class="result-verdict" id="result-verdict">
+                        <div class="verdict-icon" id="verdict-icon"></div>
+                        <div class="verdict-info">
+                            <span class="verdict-label" id="verdict-label"></span>
+                            <span class="verdict-desc" id="verdict-desc"></span>
+                        </div>
+                    </div>
+
+                    <!-- Confidence -->
+                    <div class="result-confidence">
+                        <div class="confidence-header">
+                            <span>Confidence Score</span>
+                            <span class="confidence-value" id="confidence-value">0%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidence-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Keywords -->
+                    <div class="result-keywords" id="result-keywords" style="display:none;">
+                        <h4 class="keywords-title">⚠️ Suspicious Keywords Detected</h4>
+                        <div class="keywords-list" id="keywords-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== History Section ====== -->
+    <section class="section section-alt" id="history">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">History Log</span>
+                <h2 class="section-title">Prediction History</h2>
+                <p class="section-desc">Track all your previous spam checks in one place.</p>
+            </div>
+
+            <div class="glass-card history-card reveal">
+                <div class="history-toolbar">
+                    <div class="history-info">
+                        <span id="history-count">0 predictions</span>
+                    </div>
+                    <div class="history-actions">
+                        <button class="btn btn-outline btn-sm" id="btn-export" title="Export as CSV">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export CSV
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="btn-clear" title="Clear all history">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="history-table-wrapper">
+                    <table class="history-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Message</th>
+                                <th>Result</th>
+                                <th>Confidence</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                    <div class="history-empty" id="history-empty">
+                        <span class="empty-icon">📭</span>
+                        <p>No predictions yet. Start by analyzing a message above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== Statistics Section ====== -->
+    <section class="section" id="stats">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Dashboard</span>
+                <h2 class="section-title">Statistics Overview</h2>
+                <p class="section-desc">Real-time analytics of your spam detection usage.</p>
+            </div>
+
+            <div class="stats-grid reveal">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">📨</div>
+                    <div class="stat-number" data-target="0" id="stat-total">0</div>
+                    <div class="stat-label">Messages Checked</div>
+                </div>
+                <div class="stat-card stat-spam">
+                    <div class="stat-icon">🚫</div>
+                    <div class="stat-number" data-target="0" id="stat-spam">0</div>
+                    <div class="stat-label">Spam Detected</div>
+                </div>
+                <div class="stat-card stat-ham">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-number" data-target="0" id="stat-ham">0</div>
+                    <div class="stat-label">Legitimate Messages</div>
+                </div>
+                <div class="stat-card stat-accuracy">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-number" data-target="0" id="stat-accuracy">0%</div>
+                    <div class="stat-label">Model Accuracy</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== Footer ====== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">🛡️</span>
+                    <span class="logo-text">Spam<span class="logo-highlight">Shield</span> AI</span>
+                    <p class="footer-desc">Powered by Machine Learning & NLP</p>
+                </div>
+                <div class="footer-tech">
+                    <span class="tech-badge">Scikit-learn</span>
+                    <span class="tech-badge">Flask</span>
+                    <span class="tech-badge">TF-IDF</span>
+                    <span class="tech-badge">Three.js</span>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 SpamShield AI. Built with ❤️ and Machine Learning.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ====== Scripts ====== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/app.js?v=4"></script>
+</body>
+</html>

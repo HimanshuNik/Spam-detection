@@ -1,0 +1,11 @@
+{
+    "liveServer.settings.port": 5503,
+    "liveServer.settings.root": "/frontend",
+    "liveServer.settings.proxy": {
+        "/predict": "http://127.0.0.1:5000",
+        "/history": "http://127.0.0.1:5000",
+        "/stats": "http://127.0.0.1:5000",
+        "/samples": "http://127.0.0.1:5000",
+        "/export": "http://127.0.0.1:5000"
+    }
+}
