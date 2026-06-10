@@ -199,7 +199,7 @@ def health():
         "model_loaded": model is not None and vectorizer is not None,
     })
 
-``
+
 @app.route("/predict", methods=["POST"])
 def predict():
     """
