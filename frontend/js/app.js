@@ -5,41 +5,7 @@
  * history/stats rendering, and user interactions.
  */
 
-// ---------------------------------------------------------------------------
-// Configuration — Flask API on port 5000; Go Live proxies API calls
-// ---------------------------------------------------------------------------
-const BACKEND_URL = "http://127.0.0.1:5000";
-const isServedByBackend = window.location.port === "5000";
-let API_BASE = isServedByBackend ? window.location.origin : BACKEND_URL;
-
-/** Pick the URL that can reach the API (Go Live proxy or direct backend). */
-async function resolveApiBase() {
-  if (isServedByBackend) {
-    API_BASE = window.location.origin;
-    return;
-  }
-
-  const candidates = [];
-  if (window.location.protocol.startsWith("http")) {
-    candidates.push(window.location.origin); // Go Live proxy
-  }
-  if (!candidates.includes(BACKEND_URL)) {
-    candidates.push(BACKEND_URL);
-  }
-  candidates.push("http://localhost:5000");
-
-  for (const base of candidates) {
-    try {
-      const res = await fetch(`${base}/stats`, { mode: "cors" });
-      if (res.ok) {
-        API_BASE = base;
-        return;
-      }
-    } catch {
-      // try next
-    }
-  }
-}
+// API client loaded from api.js (SpamAPI)
 
 // ---------------------------------------------------------------------------
 // DOM helpers
@@ -92,55 +58,7 @@ function showToast(message, type = "info") {
   }, 4000);
 }
 
-async function parseJsonResponse(response) {
-  const contentType = response.headers.get("content-type") || "";
-  const text = await response.text();
-
-  if (!text) {
-    return {};
-  }
-
-  const trimmed = text.trim();
-  const looksLikeJson =
-    trimmed.startsWith("{") ||
-    trimmed.startsWith("[") ||
-    contentType.includes("application/json");
-
-  if (looksLikeJson) {
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      return { error: `Invalid JSON response: ${err.message}`, raw: text };
-    }
-  }
-
-  return { error: text };
-}
-
-async function fetchApi(path, options = {}) {
-  let res;
-  try {
-    res = await fetch(`${API_BASE}${path}`, { ...options, mode: "cors" });
-  } catch {
-    throw new Error(
-      isServedByBackend
-        ? "Network error — could not reach the server."
-        : `Cannot connect to API at ${BACKEND_URL}. Start the backend first (double-click start.bat or run python app.py).`,
-    );
-  }
-
-  const payload = await parseJsonResponse(res);
-
-  if (!res.ok) {
-    throw new Error(
-      payload.error ||
-        payload.message ||
-        `API request failed: ${res.status} ${res.statusText}`,
-    );
-  }
-
-  return payload;
-}
+const fetchApi = (...args) => SpamAPI.fetchApi(...args);
 
 // ---------------------------------------------------------------------------
 // Character Counter
@@ -347,7 +265,7 @@ async function refreshHistory() {
 
 function bindHistoryButtons() {
   btnExport.addEventListener("click", () => {
-    window.location.href = `${API_BASE}/export`;
+    window.location.href = `${SpamAPI.base}/export`;
     showToast("Downloading history as CSV…", "info");
   });
 
@@ -518,7 +436,14 @@ function initDom() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   initDom();
-  await resolveApiBase();
+  const apiReady = await SpamAPI.resolveApiBase();
+  if (!apiReady) {
+    showToast(
+      "Backend not running. Double-click start.bat or run: python backend/app.py",
+      "error",
+    );
+    return;
+  }
   loadSamples();
   refreshHistory();
   refreshStats();

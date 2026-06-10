@@ -26,6 +26,7 @@ import pickle
 import sqlite3
 from datetime import datetime
 
+
 import webbrowser
 
 from flask import Flask, request, jsonify, send_from_directory, Response
@@ -50,6 +51,7 @@ FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 MODEL_PATH = os.path.join(BASE_DIR, "model.pkl")
 VECTORIZER_PATH = os.path.join(BASE_DIR, "vectorizer.pkl")
 ACCURACY_PATH = os.path.join(BASE_DIR, "model_accuracy.txt")
+METRICS_PATH = os.path.join(BASE_DIR, "model_metrics.json")
 DB_PATH = os.path.join(BASE_DIR, "spam_history.db")
 
 # ---------------------------------------------------------------------------
@@ -96,21 +98,37 @@ def get_db():
     return conn
 
 
+PREDICTIONS_SCHEMA = """
+    CREATE TABLE IF NOT EXISTS predictions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        message     TEXT    NOT NULL,
+        label       TEXT    NOT NULL,
+        confidence  REAL    NOT NULL,
+        keywords    TEXT,
+        timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+"""
+
+
 def init_db():
     """Create the predictions table if it doesn't exist."""
-    conn = get_db()
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS predictions (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            message     TEXT    NOT NULL,
-            label       TEXT    NOT NULL,
-            confidence  REAL    NOT NULL,
-            keywords    TEXT,
-            timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+    if os.path.exists(DB_PATH) and os.path.getsize(DB_PATH) < 100:
+        print("[!] Corrupted database detected — recreating …")
+        os.remove(DB_PATH)
+
+    try:
+        conn = get_db()
+        conn.execute(PREDICTIONS_SCHEMA)
+        conn.commit()
+        conn.close()
+    except sqlite3.DatabaseError:
+        print("[!] Database unreadable — recreating …")
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+        conn = get_db()
+        conn.execute(PREDICTIONS_SCHEMA)
+        conn.commit()
+        conn.close()
 
 
 init_db()
@@ -173,6 +191,15 @@ def detect_keywords(text: str) -> list:
 # ---------------------------------------------------------------------------
 # Routes — API (registered before static catch-all)
 # ---------------------------------------------------------------------------
+@app.route("/health", methods=["GET"])
+def health():
+    """Lightweight health check for frontend connectivity probing."""
+    return jsonify({
+        "status": "ok",
+        "model_loaded": model is not None and vectorizer is not None,
+    })
+
+``
 @app.route("/predict", methods=["POST"])
 def predict():
     """
@@ -304,6 +331,18 @@ def export_history():
     )
 
 
+@app.route("/ml-metrics", methods=["GET"])
+def get_ml_metrics():
+    """Return model comparison metrics for the ML analytics dashboard."""
+    if not os.path.exists(METRICS_PATH):
+        return jsonify({
+            "error": "Metrics not found. Run python train_model.py first.",
+        }), 404
+
+    with open(METRICS_PATH, "r", encoding="utf-8") as f:
+        return jsonify(json.load(f))
+
+
 @app.route("/samples", methods=["GET"])
 def get_samples():
     """Return example spam & ham messages for quick testing."""
@@ -332,6 +371,13 @@ def get_samples():
 def serve_frontend():
     """Serve the single-page application."""
     return send_from_directory(FRONTEND_DIR, "index.html")
+
+
+@app.route("/dashboard")
+@app.route("/dashboard.html")
+def serve_dashboard():
+    """Serve the ML analytics dashboard."""
+    return send_from_directory(FRONTEND_DIR, "dashboard.html")
 
 
 @app.route("/<path:path>")

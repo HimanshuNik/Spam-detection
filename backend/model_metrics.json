@@ -1,0 +1,132 @@
+{
+  "generated_at": "2026-06-10T07:28:04.521826+00:00",
+  "preprocessing": [
+    "Lowercasing",
+    "URL & number removal",
+    "Tokenization",
+    "Stopword removal",
+    "Lemmatization",
+    "TF-IDF vectorization (5000 features, 1\u20132 grams)"
+  ],
+  "dataset": {
+    "total": 5572,
+    "spam": 747,
+    "ham": 4825,
+    "train_size": 4457,
+    "test_size": 1115,
+    "test_split": 0.2
+  },
+  "models": [
+    {
+      "id": "naive_bayes",
+      "name": "Naive Bayes",
+      "accuracy": 0.9803,
+      "precision": 0.9847,
+      "recall": 0.8658,
+      "f1": 0.9214,
+      "train_time_sec": 0.0052,
+      "predict_time_sec": 0.0008,
+      "total_time_sec": 0.006,
+      "confusion_matrix": [
+        [
+          964,
+          2
+        ],
+        [
+          20,
+          129
+        ]
+      ],
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "logistic_regression",
+      "name": "Logistic Regression",
+      "accuracy": 0.9713,
+      "precision": 0.9916,
+      "recall": 0.7919,
+      "f1": 0.8806,
+      "train_time_sec": 0.0394,
+      "predict_time_sec": 0.0003,
+      "total_time_sec": 0.0398,
+      "confusion_matrix": [
+        [
+          965,
+          1
+        ],
+        [
+          31,
+          118
+        ]
+      ],
+      "color": "#3b82f6"
+    },
+    {
+      "id": "random_forest",
+      "name": "Random Forest",
+      "accuracy": 0.9758,
+      "precision": 1.0,
+      "recall": 0.8188,
+      "f1": 0.9004,
+      "train_time_sec": 0.6899,
+      "predict_time_sec": 0.0379,
+      "total_time_sec": 0.7278,
+      "confusion_matrix": [
+        [
+          966,
+          0
+        ],
+        [
+          27,
+          122
+        ]
+      ],
+      "color": "#06b6d4"
+    },
+    {
+      "id": "svm",
+      "name": "Support Vector Machine",
+      "accuracy": 0.9839,
+      "precision": 0.9781,
+      "recall": 0.8993,
+      "f1": 0.9371,
+      "train_time_sec": 0.0095,
+      "predict_time_sec": 0.0005,
+      "total_time_sec": 0.01,
+      "confusion_matrix": [
+        [
+          963,
+          3
+        ],
+        [
+          15,
+          134
+        ]
+      ],
+      "color": "#10b981"
+    }
+  ],
+  "highlights": {
+    "best_accuracy": {
+      "model": "Support Vector Machine",
+      "model_id": "svm",
+      "value": 0.9839
+    },
+    "fastest": {
+      "model": "Naive Bayes",
+      "model_id": "naive_bayes",
+      "value": 0.006,
+      "unit": "seconds"
+    },
+    "highest_f1": {
+      "model": "Support Vector Machine",
+      "model_id": "svm",
+      "value": 0.9371
+    }
+  },
+  "selected_model": {
+    "name": "Support Vector Machine",
+    "accuracy": 0.9839,
+    "reason": "Linear SVM finds an optimal separating hyperplane with maximum margin in TF-IDF space. It is robust to high dimensionality but lacks native probability estimates and is typically slower to train than Naive Bayes on very large vocabularies. On the held-out test set, Support Vector Machine reached 98.4% accuracy and 93.7% F1-score \u2014 +0.8 percentage points above the average accuracy of the other models (97.6%) and +3.6 points above their average F1 (90.1%). Combined with TF-IDF preprocessing (lowercasing, stopword removal, tokenization, lemmatization), it was selected as the production model for real-time spam detection."
+  }
+}

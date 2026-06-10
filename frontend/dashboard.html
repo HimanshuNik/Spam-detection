@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Dashboard — SpamDetector</title>
+    <meta name="description" content="Machine learning model comparison dashboard with accuracy, precision, recall, F1 scores and confusion matrices.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="dashboard-page">
+    <div id="particles-container" aria-hidden="true"></div>
+    <div id="toast-container" aria-live="polite"></div>
+
+    <nav class="navbar scrolled" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span class="logo-text">Spam<span class="logo-highlight">Detector</span></span>
+            </a>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="index.html#detect" class="nav-link">Detect</a></li>
+                <li><a href="index.html#history" class="nav-link">History</a></li>
+                <li><a href="dashboard.html" class="nav-link active">ML Dashboard</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle dark/light mode">
+                    <span class="theme-icon-dark">🌙</span>
+                    <span class="theme-icon-light">☀️</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-main">
+        <div class="container">
+            <header class="dashboard-hero reveal">
+                <span class="section-badge">Machine Learning Analytics</span>
+                <h1 class="dashboard-title">Model Comparison <span class="gradient-text">Dashboard</span></h1>
+                <p class="dashboard-subtitle">
+                    Four classifiers trained on TF-IDF features with full NLP preprocessing.
+                    Metrics computed on a held-out 20% test split.
+                </p>
+                <p class="dashboard-meta" id="dashboard-meta"></p>
+            </header>
+
+            <div id="dashboard-loading" class="dashboard-loading">
+                <span class="spinner"></span>
+                <p>Loading model metrics…</p>
+            </div>
+
+            <div id="dashboard-error" class="dashboard-error" hidden>
+                <span class="empty-icon">⚠️</span>
+                <h3>Metrics not available</h3>
+                <p>Run <code>python train_model.py</code> in the backend folder, then refresh.</p>
+                <a href="index.html" class="btn btn-primary">Back to Detector</a>
+            </div>
+
+            <div id="dashboard-content" hidden>
+                <!-- Highlight cards -->
+                <div class="highlight-grid reveal">
+                    <div class="highlight-card highlight-best">
+                        <div class="highlight-icon">🏆</div>
+                        <div class="highlight-body">
+                            <span class="highlight-label">Best Performing Model</span>
+                            <span class="highlight-value" id="hl-best-name">—</span>
+                            <span class="highlight-detail" id="hl-best-detail"></span>
+                        </div>
+                    </div>
+                    <div class="highlight-card highlight-fast">
+                        <div class="highlight-icon">⚡</div>
+                        <div class="highlight-body">
+                            <span class="highlight-label">Fastest Model</span>
+                            <span class="highlight-value" id="hl-fast-name">—</span>
+                            <span class="highlight-detail" id="hl-fast-detail"></span>
+                        </div>
+                    </div>
+                    <div class="highlight-card highlight-f1">
+                        <div class="highlight-icon">🎯</div>
+                        <div class="highlight-body">
+                            <span class="highlight-label">Highest F1 Score</span>
+                            <span class="highlight-value" id="hl-f1-name">—</span>
+                            <span class="highlight-detail" id="hl-f1-detail"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preprocessing pipeline -->
+                <div class="glass-card pipeline-card reveal">
+                    <h3 class="card-title">🔬 NLP Preprocessing Pipeline</h3>
+                    <div class="pipeline-steps" id="pipeline-steps"></div>
+                </div>
+
+                <!-- Charts row 1 -->
+                <div class="chart-grid reveal">
+                    <div class="glass-card chart-card">
+                        <h3 class="card-title">📊 Accuracy Comparison</h3>
+                        <div class="chart-wrap">
+                            <canvas id="chart-accuracy" aria-label="Accuracy comparison bar chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card chart-card">
+                        <h3 class="card-title">🥧 Spam vs Ham Distribution</h3>
+                        <div class="chart-wrap chart-wrap-pie">
+                            <canvas id="chart-distribution" aria-label="Spam versus ham pie chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts row 2 -->
+                <div class="glass-card chart-card chart-card-wide reveal">
+                    <h3 class="card-title">📈 Precision, Recall &amp; F1 Comparison</h3>
+                    <div class="chart-wrap chart-wrap-tall">
+                        <canvas id="chart-metrics" aria-label="Precision recall F1 grouped bar chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Confusion matrices -->
+                <section class="section-confusion reveal">
+                    <div class="section-header">
+                        <h2 class="section-title">Confusion Matrices</h2>
+                        <p class="section-desc">True vs predicted labels for each classifier on the test set.</p>
+                    </div>
+                    <div class="confusion-grid" id="confusion-grid"></div>
+                </section>
+
+                <!-- Model explanation -->
+                <div class="glass-card explanation-card reveal">
+                    <h3 class="card-title">💡 Why the Selected Model Performs Best</h3>
+                    <div class="selected-model-banner" id="selected-model-banner"></div>
+                    <p class="explanation-text" id="explanation-text"></p>
+                </div>
+
+                <!-- Dataset info -->
+                <div class="glass-card dataset-card reveal">
+                    <h3 class="card-title">📁 Dataset &amp; Training Split</h3>
+                    <div class="dataset-stats" id="dataset-stats"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 SpamDetector — ML Analytics Dashboard</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
