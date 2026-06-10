@@ -124,7 +124,7 @@ def _create_fallback_dataset():
         "Hot singles in your area are waiting! Sign up FREE at hotsingles.com",
         "Earn $5000 per week from home! No experience needed! Visit earn-money-now.com",
         "WINNER! You have been selected for our exclusive loyalty reward of 1000 cash!",
-        "Act now! Limited time offer - get 90% discount on all products. Click here!",
+        "Act now! Limited time offer - get 90% , discount on all products. Click here!",
         "Your mobile number has won a prize of $10000! To claim call 09061234567",
         "FREE msg: We tried to call you. You have won a prize. Please call back 08001111",
         "Congratulations ur awarded 500 of CD vouchers. Call 09066612661 to collect",
