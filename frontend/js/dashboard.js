@@ -578,6 +578,9 @@
       renderExplanation(metricsData);
       renderDatasetStats(metricsData);
 
+      // Load live analytics
+      await loadLiveAnalytics();
+
       // Show content, hide loading/error
       loading.hidden = true;
       error.hidden = true;
@@ -609,6 +612,7 @@
             renderDistributionChart(metricsData);
             renderMetricsChart(metricsData);
             renderConfusionMatrices(metricsData);
+            loadLiveAnalytics(); // Re-render live charts with new theme
           }
         }
       });
@@ -652,12 +656,163 @@
   }
 
   /**
+   * Load Live Analytics (Trends, Stats, Confidence, History)
+   */
+  async function loadLiveAnalytics() {
+    try {
+      // 1. Stats
+      const stats = await window.SpamAPI.fetchApi("/api/dashboard/stats");
+      document.getElementById("live-stat-total").textContent = stats.total_predictions.toLocaleString();
+      document.getElementById("live-stat-spam").textContent = stats.spam_predictions.toLocaleString();
+      document.getElementById("live-stat-ham").textContent = stats.ham_predictions.toLocaleString();
+
+      // 2. Trends Chart
+      const trends = await window.SpamAPI.fetchApi("/api/dashboard/trends");
+      renderTrendsChart(trends);
+
+      // 3. Confidence Chart
+      const conf = await window.SpamAPI.fetchApi("/api/dashboard/confidence");
+      renderConfidenceChart(conf);
+
+      // 4. Keywords Chart
+      const keywords = await window.SpamAPI.fetchApi("/api/dashboard/keywords");
+      renderKeywordsChart(keywords);
+
+      // 5. History Feed
+      const history = await window.SpamAPI.fetchApi("/api/dashboard/history");
+      renderHistoryFeed(history);
+    } catch (e) {
+      console.warn("Live analytics load error:", e);
+    }
+  }
+
+  function renderTrendsChart(data) {
+    const ctx = document.getElementById("chart-trends");
+    if (!ctx) return;
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.dates,
+        datasets: [
+          {
+            label: "Spam",
+            data: data.spam,
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: "Safe (Ham)",
+            data: data.ham,
+            borderColor: "#10b981",
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            fill: true,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        ...getChartOptions("line"),
+        scales: {
+          x: { ...getChartOptions("line").scales.x },
+          y: { ...getChartOptions("line").scales.y, max: null } // auto-scale y
+        }
+      }
+    });
+    chartInstances.push(chart);
+  }
+
+  function renderConfidenceChart(data) {
+    const ctx = document.getElementById("chart-confidence");
+    if (!ctx) return;
+    const labels = Object.keys(data.distribution);
+    const values = Object.values(data.distribution);
+    
+    const chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Predictions Count",
+          data: values,
+          backgroundColor: "#3b82f6",
+          borderRadius: 4
+        }]
+      },
+      options: {
+        ...getChartOptions("bar"),
+        scales: {
+          x: { ...getChartOptions("bar").scales.x },
+          y: { ...getChartOptions("bar").scales.y, max: null }
+        }
+      }
+    });
+    chartInstances.push(chart);
+  }
+
+  function renderKeywordsChart(data) {
+    const ctx = document.getElementById("chart-keywords");
+    if (!ctx) return;
+    const labels = data.top_keywords.map(k => k.keyword);
+    const values = data.top_keywords.map(k => k.count);
+
+    const chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Frequency",
+          data: values,
+          backgroundColor: "#8b5cf6",
+          borderRadius: 4
+        }]
+      },
+      options: {
+        ...getChartOptions("bar"),
+        indexAxis: 'y', // horizontal bar chart
+        scales: {
+          x: { ...getChartOptions("bar").scales.x },
+          y: { ...getChartOptions("bar").scales.y, max: null }
+        }
+      }
+    });
+    chartInstances.push(chart);
+  }
+
+  function renderHistoryFeed(history) {
+    const feed = document.getElementById("history-feed");
+    if (!feed) return;
+    feed.innerHTML = history.map(item => {
+      const isSpam = item.label === "spam";
+      const icon = isSpam ? "🚫" : "✅";
+      const color = isSpam ? "var(--danger)" : "var(--success)";
+      const time = new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      return `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+          <div style="font-size: 1.5rem;">${icon}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.message.replace(/</g, "&lt;")}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+              <span style="color: ${color}; font-weight: 600;">${item.confidence}%</span> • ${time}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  /**
    * Initialize dashboard on DOM ready
    */
   document.addEventListener("DOMContentLoaded",  () => {
     setupScrollReveal();
     loadDashboard();
     setupThemeListener();
+    
+    // Auto-refresh live analytics every 30 seconds
+    setInterval(loadLiveAnalytics, 30000);
   });
 
   // Reload dashboard when user presses refresh

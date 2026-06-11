@@ -5,6 +5,9 @@ Trains and compares four classifiers (Naive Bayes, Logistic Regression,
 Random Forest, SVM) with full NLP preprocessing, evaluation metrics,
 confusion matrices, and exports data + charts for the ML dashboard.
 
+LinearSVC is wrapped in CalibratedClassifierCV so every model exposes
+predict_proba() for consistent confidence scoring in production.
+
 Usage:
     python train_model.py
 """
@@ -13,6 +16,7 @@ import os
 import re
 import json
 import time
+import logging
 import pickle
 import zipfile
 import urllib.request
@@ -32,6 +36,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -42,14 +47,42 @@ from sklearn.metrics import (
 
 import nltk
 
-nltk.download("punkt", quiet=True)
-nltk.download("punkt_tab", quiet=True)
-nltk.download("stopwords", quiet=True)
-nltk.download("wordnet", quiet=True)
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# NLTK — download only if missing
+# ---------------------------------------------------------------------------
+_NLTK_PACKAGES = ["punkt", "punkt_tab", "stopwords", "wordnet"]
+
+
+def _ensure_nltk_data():
+    for pkg in _NLTK_PACKAGES:
+        try:
+            nltk.data.find(f"tokenizers/{pkg}" if "punkt" in pkg else f"corpora/{pkg}")
+        except LookupError:
+            logger.info("Downloading NLTK package: %s", pkg)
+            nltk.download(pkg, quiet=True)
+
+
+_ensure_nltk_data()
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
+
+# ---------------------------------------------------------------------------
+# Cached NLP singletons
+# ---------------------------------------------------------------------------
+_lemmatizer = WordNetLemmatizer()
+_stop_words = set(stopwords.words("english"))
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -80,10 +113,10 @@ MODEL_COLORS = {
 def download_dataset():
     """Download the SMS Spam Collection from UCI, or fall back to a built-in sample."""
     if os.path.exists(DATASET_PATH):
-        print(f"[OK] Dataset already exists at {DATASET_PATH}")
+        logger.info("Dataset already exists at %s", DATASET_PATH)
         return
 
-    print("[*] Downloading SMS Spam Collection dataset ...")
+    logger.info("Downloading SMS Spam Collection dataset ...")
     zip_path = os.path.join(BASE_DIR, "smsspamcollection.zip")
 
     try:
@@ -102,11 +135,11 @@ def download_dataset():
             if os.path.exists(tmp):
                 os.remove(tmp)
 
-        print(f"[OK] Dataset saved — {len(df)} messages")
+        logger.info("Dataset saved — %d messages", len(df))
 
     except Exception as exc:
-        print(f"[!] Download failed: {exc}")
-        print("[*] Creating built-in sample dataset ...")
+        logger.warning("Download failed: %s", exc)
+        logger.info("Creating built-in sample dataset ...")
         _create_fallback_dataset()
 
 
@@ -124,7 +157,7 @@ def _create_fallback_dataset():
         "Hot singles in your area are waiting! Sign up FREE at hotsingles.com",
         "Earn $5000 per week from home! No experience needed! Visit earn-money-now.com",
         "WINNER! You have been selected for our exclusive loyalty reward of 1000 cash!",
-        "Act now! Limited time offer - get 90% , discount on all products. Click here!",
+        "Act now! Limited time offer - get 90% discount on all products. Click here!",
         "Your mobile number has won a prize of $10000! To claim call 09061234567",
         "FREE msg: We tried to call you. You have won a prize. Please call back 08001111",
         "Congratulations ur awarded 500 of CD vouchers. Call 09066612661 to collect",
@@ -197,7 +230,7 @@ def _create_fallback_dataset():
         + [{"label": "ham", "message": m} for m in ham_msgs]
     )
     pd.DataFrame(data).to_csv(DATASET_PATH, index=False)
-    print(f"[OK] Fallback dataset created — {len(data)} messages")
+    logger.info("Fallback dataset created — %d messages", len(data))
 
 
 # ---------------------------------------------------------------------------
@@ -211,10 +244,8 @@ def preprocess_text(text: str) -> str:
       3. Tokenization
       4. Stopword removal
       5. Lemmatization
+    Uses module-level singletons for performance.
     """
-    lemmatizer = WordNetLemmatizer()
-    stop_words = set(stopwords.words("english"))
-
     text = str(text).lower()
     text = re.sub(r"http\S+|www\S+", "", text)
     text = re.sub(r"\d+", "", text)
@@ -223,9 +254,9 @@ def preprocess_text(text: str) -> str:
 
     tokens = word_tokenize(text)
     tokens = [
-        lemmatizer.lemmatize(t)
+        _lemmatizer.lemmatize(t)
         for t in tokens
-        if t not in stop_words and len(t) > 1
+        if t not in _stop_words and len(t) > 1
     ]
     return " ".join(tokens)
 
@@ -259,8 +290,9 @@ def build_model_explanation(best_name: str, results: list) -> str:
         ),
         "Support Vector Machine": (
             "Linear SVM finds an optimal separating hyperplane with maximum margin in TF-IDF space. "
-            "It is robust to high dimensionality but lacks native probability estimates and is "
-            "typically slower to train than Naive Bayes on very large vocabularies."
+            "It is wrapped in CalibratedClassifierCV for reliable probability estimates. "
+            "SVM is robust to high dimensionality and typically outperforms simpler linear models "
+            "on text classification tasks."
         ),
     }
 
@@ -367,16 +399,20 @@ def save_charts(results: list, label_counts: dict):
         fig.savefig(os.path.join(CHARTS_DIR, f"confusion_{slug}.png"), dpi=150)
         plt.close(fig)
 
-    print(f"[OK] Charts saved to {CHARTS_DIR}")
+    logger.info("Charts saved to %s", CHARTS_DIR)
 
 
 # ---------------------------------------------------------------------------
 # Training & Comparison
 # ---------------------------------------------------------------------------
 def train_and_compare():
-    """Train all four models, evaluate, save best model + dashboard metrics."""
+    """Train all four models, evaluate, save best model + dashboard metrics.
 
-    print("\n[*] Loading dataset ...")
+    LinearSVC is wrapped in CalibratedClassifierCV so every model exposes
+    predict_proba() — required for consistent confidence scoring.
+    """
+
+    logger.info("Loading dataset ...")
     df = pd.read_csv(DATASET_PATH, encoding="latin-1")
 
     if "label" not in df.columns:
@@ -385,9 +421,9 @@ def train_and_compare():
     df["label"] = df["label"].str.lower().str.strip()
 
     label_counts = df["label"].value_counts().to_dict()
-    print(f"[OK] {len(df)} messages  |  {label_counts}")
+    logger.info("%d messages  |  %s", len(df), label_counts)
 
-    print("[*] Preprocessing text (lowercase → tokenize → stopwords → lemmatize) ...")
+    logger.info("Preprocessing text (lowercase → tokenize → stopwords → lemmatize) ...")
     df["processed"] = df["message"].apply(preprocess_text)
     df["label_enc"] = (df["label"] == "spam").astype(int)
 
@@ -399,11 +435,12 @@ def train_and_compare():
         stratify=df["label_enc"],
     )
 
-    print("[*] Building TF-IDF features (max 5 000, unigrams + bigrams) ...")
+    logger.info("Building TF-IDF features (max 5000, unigrams + bigrams) ...")
     vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
     X_train_vec = vectorizer.fit_transform(X_train)
     X_test_vec = vectorizer.transform(X_test)
 
+    # LinearSVC wrapped in CalibratedClassifierCV to enable predict_proba()
     model_defs = {
         "naive_bayes": ("Naive Bayes", MultinomialNB(alpha=0.1)),
         "logistic_regression": (
@@ -416,7 +453,10 @@ def train_and_compare():
         ),
         "svm": (
             "Support Vector Machine",
-            LinearSVC(C=1.0, random_state=42, max_iter=3000),
+            CalibratedClassifierCV(
+                LinearSVC(C=1.0, random_state=42, max_iter=3000),
+                cv=5,
+            ),
         ),
     }
 
@@ -529,19 +569,19 @@ def train_and_compare():
 
     with open(MODEL_PATH, "wb") as f:
         pickle.dump(best_model, f)
-    print(f"\n[OK] Model saved to {MODEL_PATH}")
+    logger.info("Model saved to %s", MODEL_PATH)
 
     with open(VECTORIZER_PATH, "wb") as f:
         pickle.dump(vectorizer, f)
-    print(f"[OK] Vectorizer saved to {VECTORIZER_PATH}")
+    logger.info("Vectorizer saved to %s", VECTORIZER_PATH)
 
     with open(ACCURACY_PATH, "w") as f:
         f.write(str(round(best_acc * 100, 2)))
-    print(f"[OK] Accuracy saved to {ACCURACY_PATH}")
+    logger.info("Accuracy saved to %s", ACCURACY_PATH)
 
     with open(METRICS_PATH, "w", encoding="utf-8") as f:
         json.dump(metrics_payload, f, indent=2)
-    print(f"[OK] Metrics JSON saved to {METRICS_PATH}")
+    logger.info("Metrics JSON saved to %s", METRICS_PATH)
 
     save_charts(results, label_counts)
 
@@ -557,5 +597,5 @@ if __name__ == "__main__":
     print("=" * 62)
     download_dataset()
     accuracy, _ = train_and_compare()
-    print(f"\n[OK] Training complete!  Best accuracy: {accuracy:.2%}")
-    print("[OK] Open /dashboard.html for the ML analytics dashboard")
+    logger.info("Training complete! Best accuracy: %.2f%%", accuracy * 100)
+    logger.info("Open /dashboard for the ML analytics dashboard")

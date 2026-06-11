@@ -68,7 +68,11 @@ spam detection/
 │       ├── theme.js              # Theme switching
 │       ├── particles.js          # 3D particle background
 │       └── animations.js         # UI animations
+├── .env.example                  # Environment variables template
+├── docker-compose.yml            # Docker orchestration
+├── Dockerfile                    # Docker build instructions
 ├── start.bat                     # Windows launcher (auto-trains)
+├── start.sh                      # Linux/Mac launcher
 └── README.md                     # This file
 ```
 
@@ -94,7 +98,8 @@ spam detection/
    ```
    Or from terminal:
    ```bash
-   start.bat
+   start.bat # For Windows
+   ./start.sh # For Linux/Mac
    ```
 
    The script will:
@@ -110,6 +115,9 @@ spam detection/
 ### Manual Setup (Advanced)
 
 ```bash
+# Setup environment variables
+cp .env.example .env
+
 # Navigate to backend
 cd backend
 
@@ -123,6 +131,18 @@ python train_model.py
 python app.py
 
 # In another terminal, open browser to http://127.0.0.1:5000
+```
+
+### Docker Setup
+
+```bash
+# Build and run the container in the background
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f
+
+# The application is available at http://localhost:5000
 ```
 
 ---
@@ -408,11 +428,11 @@ python -m nltk.downloader punkt stopwords wordnet
 
 ### Deployment
 For production:
-1. Use HTTPS/SSL certificates
-2. Deploy with Gunicorn: `gunicorn -w 4 -b 0.0.0.0:5000 app:app`
-3. Use reverse proxy (Nginx)
-4. Enable database encryption
-5. Implement rate limiting
+1. Configure `.env` securely (set `FLASK_DEBUG=0` and custom `SECRET_KEY`).
+2. Use HTTPS/SSL certificates via Nginx or equivalent reverse proxy.
+3. Serve using Docker: `docker-compose up -d`
+4. Or use the built-in Waitress WSGI server (Windows/Linux cross-platform supported).
+5. Implement rate limiting and WAF rules in your load balancer.
 
 ---
 
@@ -445,7 +465,6 @@ Contributions welcome! Areas for enhancement:
 - Multi-language support
 - Real-time model retraining
 - API rate limiting
-- Docker containerization
 - Mobile app (React Native)
 
 ---

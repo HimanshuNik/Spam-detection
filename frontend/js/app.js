@@ -27,6 +27,8 @@ let confidenceVal;
 let confidenceFill;
 let keywordsWrap;
 let keywordsList;
+let reasonWrap;
+let reasonText;
 let historyTbody;
 let historyEmpty;
 let historyCount;
@@ -46,10 +48,15 @@ function showToast(message, type = "info") {
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  toast.innerHTML = `
-        <span class="toast-icon">${icons[type] || icons.info}</span>
-        <span>${message}</span>
-    `;
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "toast-icon";
+  iconSpan.textContent = icons[type] || icons.info;
+
+  const msgSpan = document.createElement("span");
+  msgSpan.textContent = message;
+
+  toast.appendChild(iconSpan);
+  toast.appendChild(msgSpan);
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -158,6 +165,13 @@ function displayResult(data) {
       .join("");
   } else {
     keywordsWrap.style.display = "none";
+  }
+
+  if (data.reason) {
+    reasonWrap.style.display = "block";
+    reasonText.textContent = data.reason;
+  } else {
+    reasonWrap.style.display = "none";
   }
 
   resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -417,6 +431,8 @@ function initDom() {
   confidenceFill = $("#confidence-fill");
   keywordsWrap = $("#result-keywords");
   keywordsList = $("#keywords-list");
+  reasonWrap = $("#result-reason");
+  reasonText = $("#reason-text");
   historyTbody = $("#history-tbody");
   historyEmpty = $("#history-empty");
   historyCount = $("#history-count");

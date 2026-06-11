@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  spam-detector:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      - FLASK_DEBUG=0
+      - OPEN_BROWSER=0
+      - SECRET_KEY=change-me-to-a-random-string-in-production
+    volumes:
+      - spam_db:/app/backend
+    restart: unless-stopped
+
+volumes:
+  spam_db:

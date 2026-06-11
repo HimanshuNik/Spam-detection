@@ -102,6 +102,64 @@
                     <div class="pipeline-steps" id="pipeline-steps"></div>
                 </div>
 
+                <!-- LIVE ANALYTICS SECTION -->
+                <section class="section-analytics reveal" style="margin-top: 3rem;">
+                    <div class="section-header">
+                        <h2 class="section-title">Live API Analytics</h2>
+                        <p class="section-desc">Real-time data aggregated from actual predictions.</p>
+                    </div>
+
+                    <!-- Live stats summary -->
+                    <div class="live-stats-grid" id="live-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="glass-card stat-box" style="padding: 1.5rem; text-align: center;">
+                            <div class="stat-value" id="live-stat-total" style="font-size: 2rem; font-weight: 700; color: var(--primary);">0</div>
+                            <div class="stat-label" style="font-size: 0.9rem; color: var(--text-secondary);">Total Queries</div>
+                        </div>
+                        <div class="glass-card stat-box" style="padding: 1.5rem; text-align: center;">
+                            <div class="stat-value" id="live-stat-spam" style="font-size: 2rem; font-weight: 700; color: var(--danger);">0</div>
+                            <div class="stat-label" style="font-size: 0.9rem; color: var(--text-secondary);">Spam Detected</div>
+                        </div>
+                        <div class="glass-card stat-box" style="padding: 1.5rem; text-align: center;">
+                            <div class="stat-value" id="live-stat-ham" style="font-size: 2rem; font-weight: 700; color: var(--success);">0</div>
+                            <div class="stat-label" style="font-size: 0.9rem; color: var(--text-secondary);">Safe Messages</div>
+                        </div>
+                    </div>
+
+                    <!-- Live charts row 1 -->
+                    <div class="chart-grid">
+                        <div class="glass-card chart-card">
+                            <h3 class="card-title">📈 Daily Prediction Trends</h3>
+                            <div class="chart-wrap">
+                                <canvas id="chart-trends" aria-label="Daily prediction trends line chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass-card chart-card">
+                            <h3 class="card-title">🎯 Model Confidence Distribution</h3>
+                            <div class="chart-wrap">
+                                <canvas id="chart-confidence" aria-label="Confidence score distribution bar chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live charts row 2 -->
+                    <div class="chart-grid" style="margin-top: 2rem;">
+                        <div class="glass-card chart-card">
+                            <h3 class="card-title">🔑 Top Spam Keywords</h3>
+                            <div class="chart-wrap">
+                                <canvas id="chart-keywords" aria-label="Top spam keywords horizontal bar chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass-card chart-card">
+                            <h3 class="card-title">🕒 Recent History</h3>
+                            <div class="history-feed" id="history-feed" style="max-height: 300px; overflow-y: auto; padding-right: 10px;">
+                                <!-- History items injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <hr style="border: 0; height: 1px; background: var(--border); margin: 3rem 0;">
+
                 <!-- Charts row 1 -->
                 <div class="chart-grid reveal">
                     <div class="glass-card chart-card">
