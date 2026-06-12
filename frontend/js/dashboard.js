@@ -657,9 +657,49 @@
 
   /**
    * Load Live Analytics (Trends, Stats, Confidence, History)
+   * - Prevents overlapping requests
+   * - Prevents duplicate Chart.js instances by destroying only the live charts
    */
+  let liveAnalyticsInFlight = false;
+
+  function destroyLiveCharts() {
+    // Live charts are the following canvas ids
+    const liveCanvasIds = [
+      "chart-trends",
+      "chart-confidence",
+      "chart-keywords",
+    ];
+
+    // Destroy any Chart.js instances tied to those canvases.
+    chartInstances = chartInstances.filter((chart) => {
+      try {
+        const id = chart?.canvas?.id;
+        if (id && liveCanvasIds.includes(id) && typeof chart.destroy === "function") {
+          chart.destroy();
+          return false;
+        }
+      } catch (e) {
+        // Ignore teardown errors
+      }
+      return true;
+    });
+  }
+
   async function loadLiveAnalytics() {
+    if (liveAnalyticsInFlight) return;
+    liveAnalyticsInFlight = true;
+
     try {
+      // If backend is unavailable, avoid spamming requests.
+      const apiReady = await window.SpamAPI.resolveApiBase();
+      if (!apiReady) {
+        // Keep UI as-is; don't repeatedly re-render broken states.
+        return;
+      }
+
+      // Prevent duplicate charts on re-renders/polling.
+      destroyLiveCharts();
+
       // 1. Stats
       const stats = await window.SpamAPI.fetchApi("/api/dashboard/stats");
       document.getElementById("live-stat-total").textContent = stats.total_predictions.toLocaleString();
@@ -683,8 +723,11 @@
       renderHistoryFeed(history);
     } catch (e) {
       console.warn("Live analytics load error:", e);
+    } finally {
+      liveAnalyticsInFlight = false;
     }
   }
+
 
   function renderTrendsChart(data) {
     const ctx = document.getElementById("chart-trends");

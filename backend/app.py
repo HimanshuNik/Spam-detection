@@ -89,6 +89,15 @@ ACCURACY_PATH = os.path.join(BASE_DIR, "model_accuracy.txt")
 METRICS_PATH = os.path.join(BASE_DIR, "model_metrics.json")
 DB_PATH = os.path.join(BASE_DIR, "spam_history.db")
 
+# Allow overriding DB path via app.config["DB_PATH"] (useful for tests)
+# Flask config values are typically set before the app starts.
+try:
+    if app.config.get("DB_PATH"):
+        DB_PATH = app.config["DB_PATH"]
+except Exception:
+    pass
+
+
 FLASK_DEBUG = os.environ.get("FLASK_DEBUG", "0") == "1"
 FLASK_HOST = os.environ.get("FLASK_HOST", "127.0.0.1")
 FLASK_PORT = int(os.environ.get("FLASK_PORT", "5000"))
