@@ -588,7 +588,7 @@ def get_samples():
             "Free entry in 2 a wkly comp to win FA Cup final tkts 21st May 2005. Text FA to 87121 to receive entry question(std txt rate)T&C's apply 08452810075over18's",
             "URGENT! You have won a 1 week free membership in our £100,000 Prize Jackpot! Txt the word: claim to No: 81010 T&C www.dbuk.net LCCLTD POBOX 4403LDNW1A7RW18",
             "Congratulations! You've been selected for a free iPhone 15 Pro! Click here to claim your prize now: http://spam-link.com/claim",
-            "URGENT: Suspicious activity detected on your HDFC / SBI debit card. Block it immediately:",
+            "USPS Alert: Your package is pending delivery due to an unpaid shipping fee of $1.95. Please update your information to avoid return: http://usps-parcel-update.info",
         ],
         "ham": [
             "Hey, are you coming to the party tonight? Let me know so I can pick you up.",
