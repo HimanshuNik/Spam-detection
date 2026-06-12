@@ -153,7 +153,7 @@ def _create_fallback_dataset():
         "You are a winner! Text WIN to 12345 to claim your free iPhone today!",
         "CASH PRIZE! Claim your 5000 award now. Call 08001234567. Valid 24hrs only",
         "FREE ringtone! Reply YES to 45678 and get unlimited free ringtones!",
-        "Your account has been compromised! Click here to verify your identity now!",
+        # "Your account has been compromised! Click here to verify your identity now!",
         "Hot singles in your area are waiting! Sign up FREE at hotsingles.com",
         "Earn $5000 per week from home! No experience needed! Visit earn-money-now.com",
         "WINNER! You have been selected for our exclusive loyalty reward of 1000 cash!",

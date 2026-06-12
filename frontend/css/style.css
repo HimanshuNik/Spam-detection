@@ -123,9 +123,9 @@ body {
     position: relative;
 }
 
-.section-alt {
-    background: var(--bg-secondary);
-}
+/* .section-alt {
+    background: transparent;
+} */
 
 .section-header {
     text-align: center;
